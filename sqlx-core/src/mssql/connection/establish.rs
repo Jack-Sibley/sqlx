@@ -1,12 +1,12 @@
 use crate::common::StatementCache;
 use crate::error::Error;
 use crate::io::Decode;
-use crate::mssql::connection::stream::MssqlStream;
+use crate::mssql::connection::{stream::MssqlStream, tls};
 use crate::mssql::protocol::login::Login7;
 use crate::mssql::protocol::message::Message;
 use crate::mssql::protocol::packet::PacketType;
 use crate::mssql::protocol::pre_login::{Encrypt, PreLogin, Version};
-use crate::mssql::{MssqlConnectOptions, MssqlConnection};
+use crate::mssql::{MssqlConnectOptions, MssqlConnection, MssqlSslMode};
 
 impl MssqlConnection {
     pub(crate) async fn establish(options: &MssqlConnectOptions) -> Result<Self, Error> {
@@ -15,14 +15,13 @@ impl MssqlConnection {
         // Send PRELOGIN to set up the context for login. The server should immediately
         // respond with a PRELOGIN message of its own.
 
-        // TODO: Encryption
         // TODO: Send the version of SQLx over
 
         stream.write_packet(
             PacketType::PreLogin,
             PreLogin {
                 version: Version::default(),
-                encryption: Encrypt::NOT_SUPPORTED,
+                encryption: Encrypt::from_ssl_mode(options.ssl_mode),
 
                 ..Default::default()
             },
@@ -33,7 +32,23 @@ impl MssqlConnection {
         let (_, packet) = stream.recv_packet().await?;
         let _ = PreLogin::decode(packet)?;
 
+        tls::maybe_upgrade(&mut stream, options).await?;
+
         // LOGIN7 defines the authentication rules for use between client and server
+
+        // Unsure if we should be populating this unconditionally, but Azure SQL requires this field
+        // to be present.
+        let server_name = match options.ssl_mode {
+            MssqlSslMode::Disabled => "",
+            _ => {
+                let mut fields = options.host.split('.');
+                match fields.next() {
+                    Some(name) => name,
+                    None => "",
+                }
+            }
+        };
+        log::debug!("mssql: Setting server_name to {}", server_name);
 
         stream.write_packet(
             PacketType::Tds7Login,
@@ -47,7 +62,7 @@ impl MssqlConnection {
                 username: &options.username,
                 password: options.password.as_deref().unwrap_or_default(),
                 app_name: "",
-                server_name: "",
+                server_name: server_name,
                 client_interface_name: "",
                 language: "",
                 database: &*options.database,
