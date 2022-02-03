@@ -57,6 +57,8 @@ impl EnvChange {
                 EnvChange::RollbackTransaction(data.get_u64_le())
             }
 
+            20 => EnvChange::RoutingInformation,
+
             _ => {
                 return Err(err_protocol!("unexpected value {} for ENVCHANGE Type", ty));
             }
