@@ -38,10 +38,10 @@ impl FromStr for MssqlConnectOptions {
 
         let path = url.path().trim_start_matches('/');
         if !path.is_empty() {
-            options = options.unwrap().database(path);
+            options = options.database(path);
         }
 
-        println!("{}", options.password);
+        println!("{:?}", options.password);
 
         Ok(options)
     }
