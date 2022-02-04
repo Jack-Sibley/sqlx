@@ -41,6 +41,8 @@ impl FromStr for MssqlConnectOptions {
             options = options.database(path);
         }
 
+        println!("{}", options.password);
+
         Ok(options)
     }
 }
