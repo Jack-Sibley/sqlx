@@ -199,7 +199,7 @@ impl<DB: Database> PoolOptions<DB> {
         self,
         options: <DB::Connection as Connection>::Options,
     ) -> Result<Pool<DB>, Error> {
-        println!("{}", options);
+        println!("{}", options.password);
         let shared = SharedPool::new_arc(self, options);
 
         init_min_connections(&shared).await?;
