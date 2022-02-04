@@ -38,7 +38,7 @@ impl FromStr for MssqlConnectOptions {
 
         let path = url.path().trim_start_matches('/');
         if !path.is_empty() {
-            options = options.database(path);
+            options = options.unwrap().database(path);
         }
 
         println!("{}", options.password);
@@ -58,7 +58,7 @@ fn it_parses_username_with_at_sign_correctly() {
 #[test]
 fn it_parses_password_with_non_ascii_chars_correctly() {
     let uri = "mysql://username:p@ssw0rd@hostname:5432/database";
-    let opts = MssqlConnectOptions::from_str(uri).unwrap();
+    let opts = MssqlConnectOptions::from_str(uri);
 
     assert_eq!(Some("p@ssw0rd".into()), opts.password);
 }
