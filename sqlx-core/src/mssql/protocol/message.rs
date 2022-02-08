@@ -53,8 +53,9 @@ impl MessageType {
             0xfd => MessageType::Done,
             0xfe => MessageType::DoneProc,
             0xff => MessageType::DoneInProc,
-            
+
             0x65 => MessageType::Info,
+            0x00 => MessageType::Info,
 
             ty => {
                 return Err(err_protocol!(
