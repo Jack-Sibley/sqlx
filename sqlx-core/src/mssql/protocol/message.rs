@@ -54,9 +54,6 @@ impl MessageType {
             0xfe => MessageType::DoneProc,
             0xff => MessageType::DoneInProc,
 
-            0x65 => MessageType::Info,
-            0x00 => MessageType::Info,
-
             ty => {
                 return Err(err_protocol!(
                     "unknown value `0x{:02x?}` for message type in token stream",
